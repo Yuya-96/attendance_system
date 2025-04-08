@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>打刻入力</title>
+  <style>
+    body { font-family: sans-serif; padding: 2em; }
+    form { margin-top: 1em; }
+  </style>
+</head>
+<body>
+  <h1>打刻入力</h1>
+  <form id="attendance-form">
+    <label>日付: <input type="date" name="date" required></label><br><br>
+    <label>出勤コマ:</label><br>
+    <label><input type="checkbox" name="periods" value="1">1限</label>
+    <label><input type="checkbox" name="periods" value="2">2限</label>
+    <label><input type="checkbox" name="periods" value="3">3限</label>
+    <label><input type="checkbox" name="periods" value="4">4限</label>
+    <label><input type="checkbox" name="periods" value="5">5限</label>
+    <label><input type="checkbox" name="periods" value="6">6限</label><br><br>
+    <label>事務作業時間（分）: <input type="number" name="office_minutes" min="0"></label><br><br>
+    <button type="submit">打刻する</button>
+  </form>
+  <br>
+  <a href="index.html">メニューに戻る</a>
+
+  <script>
+    document.getElementById('attendance-form').addEventListener('submit', function (e) {
+      e.preventDefault();
+      const formData = new FormData(this);
+      const date = formData.get('date');  // この日付は yyyy-mm-dd の形式になる
+      const periods = formData.getAll('periods');
+      const officeMinutes = parseInt(formData.get('office_minutes') || '0', 10);
+  
+      // 現在の日付を「yyyy-mm-dd」形式に統一して保存
+      const formattedDate = new Date(date).toISOString().split('T')[0];  // 'yyyy-mm-dd'形式に変換
+  
+      // ローカルストレージからデータを取得して、保存
+      const data = JSON.parse(localStorage.getItem('attendanceData') || '[]');  // attendanceをattendanceDataに変更
+      data.push({ date: formattedDate, periods, officeMinutes });
+  
+      // ローカルストレージに保存
+      localStorage.setItem('attendanceData', JSON.stringify(data));  // attendanceをattendanceDataに変更
+  
+      alert("打刻完了しました");
+      this.reset();
+    });
+  </script>
+</body>
+</html>
