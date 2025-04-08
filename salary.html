@@ -50,29 +50,38 @@
     monthPicker.appendChild(table);
 
     function showSalary(month) {
-      const data = JSON.parse(localStorage.getItem('attendanceData') || '[]');  // attendanceをattendanceDataに変更
-      const filtered = data.filter(row => row.date.startsWith(month));
+  const data = JSON.parse(localStorage.getItem('attendance') || '[]');
+  const filtered = data.filter(row => row.date.startsWith(month));
 
-      let totalPeriods = 0;
-      let totalMinutes = 0;
+  let totalPeriods = 0;
+  let totalMinutes = 0;
 
-      filtered.forEach(row => {
-        totalPeriods += (row.periods || []).length;
-        totalMinutes += row.officeMinutes || 0;
-      });
+  filtered.forEach(row => {
+    totalPeriods += (row.periods || []).length;
+    totalMinutes += row.officeMinutes || 0;
+  });
 
-      const salary = totalPeriods * 2183 + totalMinutes * 18;
-      display.innerHTML = `
-        <table>
-          <thead><tr><th>出勤コマ</th><th>事務時間</th><th>給与</th></tr></thead>
-          <tbody><tr>
-            <td>${totalPeriods}</td>
-            <td>${totalMinutes}</td>
-            <td>${salary.toLocaleString()}円</td>
-          </tr></tbody>
-        </table>
-      `;
-    }
+  let salary = 0;
+  
+  // 6限全てが選択されている場合の超過計算
+  if (totalPeriods === 6) {
+    // 通常の5コマ×2000円と、1コマを2100円で計算
+    salary = (5 * 2000) + (1 * 2100) + (totalMinutes * 20);
+  } else {
+    // 通常のコマ数×2000円で計算
+    salary = totalPeriods * 2000 + totalMinutes * 20;
+  }
+
+  display.innerHTML = 
+    `<table>
+      <thead><tr><th>出勤コマ</th><th>事務時間</th><th>給与</th></tr></thead>
+      <tbody><tr>
+        <td>${totalPeriods}</td>
+        <td>${totalMinutes}</td>
+        <td>${salary.toLocaleString()}円</td>
+      </tr></tbody>
+    </table>`;
+}
   </script>
 </body>
 </html>
