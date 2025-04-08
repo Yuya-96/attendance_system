@@ -12,6 +12,7 @@
   <h1>打刻入力</h1>
   <form id="attendance-form">
     <label>日付: <input type="date" name="date" required></label><br><br>
+    
     <label>出勤コマ:</label><br>
     <label><input type="checkbox" name="periods" value="1">1限</label>
     <label><input type="checkbox" name="periods" value="2">2限</label>
@@ -19,7 +20,12 @@
     <label><input type="checkbox" name="periods" value="4">4限</label>
     <label><input type="checkbox" name="periods" value="5">5限</label>
     <label><input type="checkbox" name="periods" value="6">6限</label><br><br>
+    
     <label>事務作業時間（分）: <input type="number" name="office_minutes" min="0"></label><br><br>
+
+    <label>特別給の理由: <input type="text" name="special_reason" placeholder="例：臨時会議"></label><br><br>
+    <label>特別給の額（円）: <input type="number" name="special_amount" min="0"></label><br><br>
+
     <button type="submit">打刻する</button>
   </form>
   <br>
@@ -29,20 +35,16 @@
     document.getElementById('attendance-form').addEventListener('submit', function (e) {
       e.preventDefault();
       const formData = new FormData(this);
-      const date = formData.get('date');  // この日付は yyyy-mm-dd の形式になる
+      const date = new Date(formData.get('date')).toISOString().split('T')[0];
       const periods = formData.getAll('periods');
       const officeMinutes = parseInt(formData.get('office_minutes') || '0', 10);
-  
-      // 現在の日付を「yyyy-mm-dd」形式に統一して保存
-      const formattedDate = new Date(date).toISOString().split('T')[0];  // 'yyyy-mm-dd'形式に変換
-  
-      // ローカルストレージからデータを取得して、保存
-      const data = JSON.parse(localStorage.getItem('attendanceData') || '[]');  // attendanceをattendanceDataに変更
-      data.push({ date: formattedDate, periods, officeMinutes });
-  
-      // ローカルストレージに保存
-      localStorage.setItem('attendanceData', JSON.stringify(data));  // attendanceをattendanceDataに変更
-  
+      const specialReason = formData.get('special_reason') || '';
+      const specialAmount = parseInt(formData.get('special_amount') || '0', 10);
+
+      const data = JSON.parse(localStorage.getItem('attendance') || '[]');
+      data.push({ date, periods, officeMinutes, specialReason, specialAmount });
+      localStorage.setItem('attendance', JSON.stringify(data));
+
       alert("打刻完了しました");
       this.reset();
     });
