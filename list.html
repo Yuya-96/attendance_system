@@ -1,4 +1,3 @@
-<!-- list.html -->
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -10,68 +9,120 @@
     th, td { border: 1px solid #ccc; padding: 0.5em; text-align: center; }
     td.month { cursor: pointer; background: #eef; }
     td.month:hover { background: #ddf; }
+    button { margin: 0.5em; }
   </style>
 </head>
 <body>
   <h1>勤怠一覧</h1>
+  
+  <!-- 年選択プルダウン -->
+  <label>年を選択: 
+    <select id="year-select"></select>
+  </label>
+  
   <div id="month-picker"></div>
+  
   <table>
-    <thead><tr><th>日付</th><th>出勤コマ</th><th>事務時間（分）</th></tr></thead>
+    <thead><tr><th>日付</th><th>出勤コマ</th><th>事務時間（分）</th><th>削除</th></tr></thead>
     <tbody id="attendance-body"></tbody>
   </table>
+  
   <br>
   <a href="index.html">メニューに戻る</a>
 
   <script>
+    const yearSelect = document.getElementById('year-select');
     const monthPicker = document.getElementById('month-picker');
     const tbody = document.getElementById('attendance-body');
-    const months = [
-      '1月', '2月', '3月', '4月', '5月', '6月',
-      '7月', '8月', '9月', '10月', '11月', '12月'
-    ];
-  
-    const currentYear = new Date().getFullYear();
-  
-    // 月選択ボタンの作成
-    const table = document.createElement('table');
-    const header = document.createElement('thead');
-    header.innerHTML = <tr><th colspan="3">${currentYear}</th></tr>;
-    table.appendChild(header);
-  
-    const tbodyPicker = document.createElement('tbody');
-    for (let i = 0; i < 4; i++) {
-      const row = document.createElement('tr');
-      for (let j = 0; j < 3; j++) {
-        const m = i * 3 + j;
-        const cell = document.createElement('td');
-        cell.className = 'month';
-        cell.textContent = months[m];
-        cell.dataset.value = ${currentYear}-${String(m + 1).padStart(2, '0')};
-        cell.onclick = () => showAttendance(cell.dataset.value);
-        row.appendChild(cell);
-      }
-      tbodyPicker.appendChild(row);
+    const months = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
+
+    // 勤怠データから入力のあった年を取得
+    function getYearsWithData() {
+      const data = JSON.parse(localStorage.getItem('attendance') || '[]');
+      const years = new Set();
+      data.forEach(entry => {
+        const year = entry.date.split('-')[0];
+        years.add(year);
+      });
+      return Array.from(years).sort();
     }
-    table.appendChild(tbodyPicker);
-    monthPicker.appendChild(table);
-  
-    // 勤怠データ表示関数
+
+    // 年選択プルダウンを動的に更新
+    function updateYearSelect() {
+      const years = getYearsWithData();
+      yearSelect.innerHTML = '';
+      years.forEach(year => {
+        const option = document.createElement('option');
+        option.value = year;
+        option.textContent = year;
+        yearSelect.appendChild(option);
+      });
+      
+      // デフォルトで今年の年を選択
+      if (years.includes(new Date().getFullYear().toString())) {
+        yearSelect.value = new Date().getFullYear();
+      }
+      renderMonthPicker();  // 年変更時に月ピッカーも更新
+    }
+
+    // 年変更時に月ピッカーを再描画
+    yearSelect.addEventListener('change', renderMonthPicker);
+    updateYearSelect();  // 初期表示時に更新
+
+    // 月選択ピッカーの作成
+    function renderMonthPicker() {
+      const selectedYear = yearSelect.value;
+      monthPicker.innerHTML = '';
+      const table = document.createElement('table');
+      const header = document.createElement('thead');
+      header.innerHTML = `<tr><th colspan="3">${selectedYear}</th></tr>`;
+      table.appendChild(header);
+
+      const tbodyPicker = document.createElement('tbody');
+      for (let i = 0; i < 4; i++) {
+        const row = document.createElement('tr');
+        for (let j = 0; j < 3; j++) {
+          const m = i * 3 + j;
+          const cell = document.createElement('td');
+          cell.className = 'month';
+          cell.textContent = months[m];
+          cell.dataset.value = `${selectedYear}-${String(m + 1).padStart(2, '0')}`;
+          cell.onclick = () => showAttendance(cell.dataset.value);
+          row.appendChild(cell);
+        }
+        tbodyPicker.appendChild(row);
+      }
+      table.appendChild(tbodyPicker);
+      monthPicker.appendChild(table);
+    }
+
+    // 月ごとの勤怠表示
     function showAttendance(month) {
       const data = JSON.parse(localStorage.getItem('attendance') || '[]');
-      tbody.innerHTML = '';
-  
-      // 月のフィルタリング処理
-      data.filter(row => row.date.startsWith(month)).forEach(row => {
+      const filtered = data.filter(row => row.date.startsWith(month));
+
+      tbody.innerHTML = '';  // 表の初期化
+
+      filtered.forEach((row, index) => {
         const tr = document.createElement('tr');
         tr.innerHTML = 
-          <td>${row.date}</td>
-          <td>${row.periods.join(', ')}</td>
-          <td>${row.officeMinutes}</td>
-        ;
+          `<td>${row.date}</td>
+           <td>${row.periods.join(', ')}</td>
+           <td>${row.officeMinutes}</td>
+           <td><button onclick="deleteEntry(${index})">削除</button></td>`;
         tbody.appendChild(tr);
       });
     }
+
+    // 勤怠削除関数
+    function deleteEntry(index) {
+      const data = JSON.parse(localStorage.getItem('attendance') || '[]');
+      if (confirm("この打刻を削除しますか？")) {
+        data.splice(index, 1);  // 指定したインデックスのデータを削除
+        localStorage.setItem('attendance', JSON.stringify(data));  // 更新されたデータを保存
+        location.reload();  // ページをリロードして変更を反映
+      }
+    }
   </script>
-  
 </body>
 </html>
