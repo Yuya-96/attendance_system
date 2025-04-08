@@ -1,8 +1,7 @@
+<!-- list.html -->
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <link rel="icon" href="meiko.png" type="image/x-icon">
-  <link rel="apple-touch-icon" href="meiko.png">
   <meta charset="UTF-8">
   <title>勤怠一覧</title>
   <style>
@@ -16,50 +15,29 @@
 </head>
 <body>
   <h1>勤怠一覧</h1>
-  
-  <!-- 年選択プルダウン -->
-  <label>年を選択: 
+  <label>年を選択:
     <select id="year-select"></select>
   </label>
-  
-  <!-- 並べ替えプルダウン -->
-  <label>並べ替え: 
-    <select id="sort-order">
-      <option value="asc">古い順</option>
-      <option value="desc">新しい順</option>
-    </select>
-  </label>
-
   <div id="month-picker"></div>
-  
   <table>
     <thead><tr><th>日付</th><th>出勤コマ</th><th>事務時間（分）</th><th>編集</th></tr></thead>
     <tbody id="attendance-body"></tbody>
   </table>
-  
   <br>
   <a href="index.html">メニューに戻る</a>
-
   <script>
     const yearSelect = document.getElementById('year-select');
     const monthPicker = document.getElementById('month-picker');
     const tbody = document.getElementById('attendance-body');
-    const sortOrderSelect = document.getElementById('sort-order');
     const months = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
-    let selectedMonth = ''; // 現在選択されている月を保持する変数
 
-    // 勤怠データから入力のあった年を取得
     function getYearsWithData() {
       const data = JSON.parse(localStorage.getItem('attendance') || '[]');
       const years = new Set();
-      data.forEach(entry => {
-        const year = entry.date.split('-')[0];
-        years.add(year);
-      });
+      data.forEach(entry => years.add(entry.date.split('-')[0]));
       return Array.from(years).sort();
     }
 
-    // 年選択プルダウンを動的に更新
     function updateYearSelect() {
       const years = getYearsWithData();
       yearSelect.innerHTML = '';
@@ -69,19 +47,15 @@
         option.textContent = year;
         yearSelect.appendChild(option);
       });
-      
-      // デフォルトで今年の年を選択
       if (years.includes(new Date().getFullYear().toString())) {
         yearSelect.value = new Date().getFullYear();
       }
-      renderMonthPicker();  // 年変更時に月ピッカーも更新
+      renderMonthPicker();
     }
 
-    // 年変更時に月ピッカーを再描画
     yearSelect.addEventListener('change', renderMonthPicker);
-    updateYearSelect();  // 初期表示時に更新
+    updateYearSelect();
 
-    // 月選択ピッカーの作成
     function renderMonthPicker() {
       const selectedYear = yearSelect.value;
       monthPicker.innerHTML = '';
@@ -99,10 +73,7 @@
           cell.className = 'month';
           cell.textContent = months[m];
           cell.dataset.value = `${selectedYear}-${String(m + 1).padStart(2, '0')}`;
-          cell.onclick = () => {
-            selectedMonth = cell.dataset.value; // クリックした月を保存
-            showAttendance(selectedMonth); // 選択した月を表示
-          };
+          cell.onclick = () => showAttendance(cell.dataset.value);
           row.appendChild(cell);
         }
         tbodyPicker.appendChild(row);
@@ -111,45 +82,21 @@
       monthPicker.appendChild(table);
     }
 
-    // 月ごとの勤怠表示
     function showAttendance(month) {
       const data = JSON.parse(localStorage.getItem('attendance') || '[]');
       const filtered = data.filter(row => row.date.startsWith(month));
+      filtered.sort((a, b) => new Date(a.date) - new Date(b.date));
 
-      // 並べ替え処理
-      const sortOrder = sortOrderSelect.value;
-      if (sortOrder === 'asc') {
-        filtered.sort((a, b) => new Date(a.date) - new Date(b.date));  // 古い順
-      } else {
-        filtered.sort((a, b) => new Date(b.date) - new Date(a.date));  // 新しい順
-      }
-
-      tbody.innerHTML = '';  // 表の初期化
-
-      filtered.forEach((row, index) => {
+      tbody.innerHTML = '';
+      filtered.forEach(row => {
         const tr = document.createElement('tr');
-        tr.innerHTML = 
+        tr.innerHTML =
           `<td>${row.date}</td>
            <td>${row.periods.join(', ')}</td>
            <td>${row.officeMinutes}</td>
-           <td><button onclick="editEntry(${index})">編集</button></td>`;
+           <td><button onclick="location.href='edit.html?date=${row.date}'">編集</button></td>`;
         tbody.appendChild(tr);
       });
-    }
-
-    // 並べ替えプルダウンの変更時にページを更新
-    sortOrderSelect.addEventListener('change', () => {
-      if (selectedMonth) {
-        showAttendance(selectedMonth);  // 現在選択されている月を再描画
-      }
-    });
-
-    // 勤怠編集ページへ遷移
-    function editEntry(index) {
-      const data = JSON.parse(localStorage.getItem('attendance') || '[]');
-      const entry = data[index];
-      localStorage.setItem('editEntry', JSON.stringify(entry));  // 編集用データを保存
-      window.location.href = 'edit.html';  // 編集ページに遷移
     }
   </script>
 </body>
