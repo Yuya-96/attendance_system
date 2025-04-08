@@ -97,22 +97,24 @@
 
       let totalPeriods = 0;
       let totalMinutes = 0;
+      let totalSpecial = 0;  // 特別給の合計
       const specialReasons = [];
 
       filtered.forEach(row => {
         totalPeriods += (row.periods || []).length;
         totalMinutes += row.officeMinutes || 0;
+        totalSpecial += parseInt(row.specialAmount || '0', 10);
         if (row.specialReason) {
           specialReasons.push(row.specialReason);
         }
       });
 
       let salary = 0;
-
+      // 基本給＋事務作業時間の賃金＋特別給を加算
       if (totalPeriods === 6) {
-        salary = (5 * 2183) + (1 * 2729) + (totalMinutes * 18);
+        salary = (5 * 2183) + (1 * 2729) + (totalMinutes * 18) + totalSpecial;
       } else {
-        salary = totalPeriods * 2183 + totalMinutes * 18;
+        salary = totalPeriods * 2183 + totalMinutes * 18 + totalSpecial;
       }
 
       display.innerHTML = 
