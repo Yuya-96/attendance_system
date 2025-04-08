@@ -1,3 +1,4 @@
+<!-- list.html -->
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -9,17 +10,13 @@
     th, td { border: 1px solid #ccc; padding: 0.5em; text-align: center; }
     td.month { cursor: pointer; background: #eef; }
     td.month:hover { background: #ddf; }
-    button { padding: 5px 10px; background-color: red; color: white; border: none; cursor: pointer; }
-    button:hover { background-color: darkred; }
   </style>
 </head>
 <body>
   <h1>勤怠一覧</h1>
   <div id="month-picker"></div>
   <table>
-    <thead>
-      <tr><th>日付</th><th>出勤コマ</th><th>事務時間（分）</th><th>削除</th></tr>
-    </thead>
+    <thead><tr><th>日付</th><th>出勤コマ</th><th>事務時間（分）</th></tr></thead>
     <tbody id="attendance-body"></tbody>
   </table>
   <br>
@@ -32,16 +29,15 @@
       '1月', '2月', '3月', '4月', '5月', '6月',
       '7月', '8月', '9月', '10月', '11月', '12月'
     ];
-
+  
     const currentYear = new Date().getFullYear();
-    let currentMonth = ''; // ← 現在表示中の月を保持
-
+  
     // 月選択ボタンの作成
     const table = document.createElement('table');
     const header = document.createElement('thead');
-    header.innerHTML = `<tr><th colspan="3">${currentYear}</th></tr>`;
+    header.innerHTML = <tr><th colspan="3">${currentYear}</th></tr>;
     table.appendChild(header);
-
+  
     const tbodyPicker = document.createElement('tbody');
     for (let i = 0; i < 4; i++) {
       const row = document.createElement('tr');
@@ -50,7 +46,7 @@
         const cell = document.createElement('td');
         cell.className = 'month';
         cell.textContent = months[m];
-        cell.dataset.value = `${currentYear}-${String(m + 1).padStart(2, '0')}`;
+        cell.dataset.value = ${currentYear}-${String(m + 1).padStart(2, '0')};
         cell.onclick = () => showAttendance(cell.dataset.value);
         row.appendChild(cell);
       }
@@ -58,44 +54,24 @@
     }
     table.appendChild(tbodyPicker);
     monthPicker.appendChild(table);
-
+  
     // 勤怠データ表示関数
     function showAttendance(month) {
-      currentMonth = month; // 現在の月を記録
       const data = JSON.parse(localStorage.getItem('attendance') || '[]');
       tbody.innerHTML = '';
-
-      // フィルターして表示
-      data.forEach((row, index) => {
-        if (row.date.startsWith(month)) {
-          const tr = document.createElement('tr');
-          tr.innerHTML =
-            `<td>${row.date}</td>
-             <td>${row.periods.join(', ')}</td>
-             <td>${row.officeMinutes}</td>
-             <td><button onclick="deleteAttendance('${row.date}', '${row.periods.join(',')}', ${row.officeMinutes})">削除</button></td>`;
-          tbody.appendChild(tr);
-        }
+  
+      // 月のフィルタリング処理
+      data.filter(row => row.date.startsWith(month)).forEach(row => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = 
+          <td>${row.date}</td>
+          <td>${row.periods.join(', ')}</td>
+          <td>${row.officeMinutes}</td>
+        ;
+        tbody.appendChild(tr);
       });
     }
-
-    // 勤怠データ削除関数（フィルタ一致で削除）
-    function deleteAttendance(date, periodsStr, officeMinutes) {
-      const periods = periodsStr.split(',');
-      let data = JSON.parse(localStorage.getItem('attendance') || '[]');
-
-      // 正確に一致するデータを1件だけ削除
-      const index = data.findIndex(item =>
-        item.date === date &&
-        JSON.stringify(item.periods) === JSON.stringify(periods) &&
-        item.officeMinutes === officeMinutes
-      );
-      if (index !== -1) {
-        data.splice(index, 1);
-        localStorage.setItem('attendance', JSON.stringify(data));
-        showAttendance(currentMonth);
-      }
-    }
   </script>
+  
 </body>
 </html>
