@@ -5,70 +5,87 @@
   <title>勤怠編集</title>
   <style>
     body { font-family: sans-serif; padding: 2em; }
-    label { display: block; margin: 0.5em 0; }
-    input, select, textarea { width: 100%; padding: 0.5em; }
-    button { margin-top: 1em; }
+    label { display: block; margin: 1em 0; }
+    input, button { padding: 0.5em; font-size: 1em; }
+    button { background-color: #4CAF50; color: white; border: none; cursor: pointer; }
+    button:hover { background-color: #45a049; }
+    .delete-button { background-color: #f44336; }
+    .delete-button:hover { background-color: #e53935; }
   </style>
 </head>
 <body>
   <h1>勤怠編集</h1>
+  <form id="attendance-form">
+    <label for="date">日付:</label>
+    <input type="date" id="date" name="date" required>
 
-  <form id="edit-form">
-    <label for="date">日付</label>
-    <input type="text" id="date" disabled>
+    <label for="periods">出勤コマ:</label>
+    <input type="text" id="periods" name="periods" required>
 
-    <label for="periods">出勤コマ</label>
-    <input type="text" id="periods" placeholder="例: 1, 2, 3">
-
-    <label for="officeMinutes">事務時間（分）</label>
-    <input type="number" id="officeMinutes" placeholder="事務時間">
+    <label for="officeMinutes">事務時間（分）:</label>
+    <input type="number" id="officeMinutes" name="officeMinutes" required>
 
     <button type="submit">保存</button>
-    <button type="button" onclick="deleteEntry()">削除</button>
+    <button type="button" class="delete-button" id="delete-button">削除</button>
   </form>
-
+  
   <br>
   <a href="list.html">勤怠一覧に戻る</a>
 
   <script>
-    const params = new URLSearchParams(window.location.search);
-    const index = params.get('index');
-    const form = document.getElementById('edit-form');
+    // 編集用データの取得
+    const editData = JSON.parse(localStorage.getItem('editEntry'));
 
-    // ローカルストレージから勤怠データを取得
-    const data = JSON.parse(localStorage.getItem('attendance') || '[]');
-    const entry = data[index];
+    if (!editData) {
+      alert("編集データが見つかりません");
+      window.location.href = 'list.html';  // データがない場合は一覧に戻す
+    }
 
     // フォームにデータをセット
-    document.getElementById('date').value = entry.date;
-    document.getElementById('periods').value = entry.periods.join(', ');
-    document.getElementById('officeMinutes').value = entry.officeMinutes;
+    document.getElementById('date').value = editData.date;
+    document.getElementById('periods').value = editData.periods.join(', ');
+    document.getElementById('officeMinutes').value = editData.officeMinutes;
 
-    // 保存処理
-    form.addEventListener('submit', function(e) {
+    // フォームの送信処理
+    document.getElementById('attendance-form').addEventListener('submit', function(e) {
       e.preventDefault();
-      
-      // 入力された値を取得
-      entry.periods = document.getElementById('periods').value.split(',').map(p => p.trim());
-      entry.officeMinutes = document.getElementById('officeMinutes').value;
 
-      // ローカルストレージに更新を保存
-      localStorage.setItem('attendance', JSON.stringify(data));
+      const updatedData = {
+        date: document.getElementById('date').value,
+        periods: document.getElementById('periods').value.split(',').map(period => period.trim()),
+        officeMinutes: document.getElementById('officeMinutes').value
+      };
 
-      // 一覧画面に戻る
-      alert('勤怠が更新されました');
-      window.location.href = 'list.html';
+      // 勤怠データの更新
+      const data = JSON.parse(localStorage.getItem('attendance') || '[]');
+      const index = data.findIndex(item => item.date === editData.date && item.periods.join(',') === editData.periods.join(','));
+
+      if (index !== -1) {
+        data[index] = updatedData;  // データを更新
+        localStorage.setItem('attendance', JSON.stringify(data));  // 更新されたデータを保存
+        alert("勤怠情報が更新されました");
+        window.location.href = 'list.html';  // 更新後に一覧ページに遷移
+      } else {
+        alert("データが見つかりませんでした");
+      }
     });
 
-    // 削除処理
-    function deleteEntry() {
-      if (confirm("この勤怠データを削除しますか？")) {
-        data.splice(index, 1);  // 該当データを削除
-        localStorage.setItem('attendance', JSON.stringify(data));  // 更新
-        alert('勤怠データが削除されました');
-        window.location.href = 'list.html';  // 一覧画面に戻る
+    // 削除ボタンの処理
+    document.getElementById('delete-button').addEventListener('click', function() {
+      if (confirm("本当にこの打刻を削除しますか？")) {
+        const data = JSON.parse(localStorage.getItem('attendance') || '[]');
+        const index = data.findIndex(item => item.date === editData.date && item.periods.join(',') === editData.periods.join(','));
+
+        if (index !== -1) {
+          data.splice(index, 1);  // 該当する勤怠データを削除
+          localStorage.setItem('attendance', JSON.stringify(data));  // 削除後のデータを保存
+          alert("打刻が削除されました");
+          window.location.href = 'list.html';  // 削除後に一覧ページに遷移
+        } else {
+          alert("データが見つかりませんでした");
+        }
       }
-    }
+    });
   </script>
 </body>
 </html>
