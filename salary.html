@@ -11,6 +11,8 @@
     th, td { border: 1px solid #ccc; padding: 0.5em; text-align: center; }
     td.month { cursor: pointer; background: #eef; }
     td.month:hover { background: #ddf; }
+    .rate-table { margin-top: 2em; width: auto; }
+    .rate-table th { background: #f0f0f0; }
   </style>
 </head>
 <body>
@@ -32,6 +34,18 @@
 
   <br>
   <a href="index.html">メニューに戻る</a>
+
+  <!-- 🔹給与単価の表示欄 -->
+  <h2>給与単価一覧</h2>
+  <table class="rate-table">
+    <thead>
+      <tr><th>期間</th><th>1コマ単価</th><th>超過（6コマ目）</th><th>事務（1分）</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>〜2025年9月</td><td>2,183円</td><td>2,729円</td><td>18円</td></tr>
+      <tr><td>2025年10月〜</td><td>2,448円</td><td>3,060円</td><td>20円</td></tr>
+    </tbody>
+  </table>
 
   <script>
     const monthPicker = document.getElementById('month-picker');
@@ -94,9 +108,19 @@
       monthPicker.appendChild(table);
     }
 
+    function getRatesForMonth(month) {
+      const [year, m] = month.split('-').map(x => parseInt(x, 10));
+      if (year > 2025 || (year === 2025 && m >= 10)) {
+        return { koma: 2448, extra: 3060, office: 20 };
+      } else {
+        return { koma: 2183, extra: 2729, office: 18 };
+      }
+    }
+
     function showSalary(month) {
       const data = JSON.parse(localStorage.getItem('attendance') || '[]');
       const filtered = data.filter(row => row.date.startsWith(month));
+      const rates = getRatesForMonth(month);
 
       let totalPeriods = 0;
       let totalMinutes = 0;
@@ -114,9 +138,9 @@
 
       let salary = 0;
       if (totalPeriods === 6) {
-        salary = (5 * 2183) + (1 * 2729) + (totalMinutes * 18) + totalSpecial;
+        salary = (5 * rates.koma) + (1 * rates.extra) + (totalMinutes * rates.office) + totalSpecial;
       } else {
-        salary = totalPeriods * 2183 + totalMinutes * 18 + totalSpecial;
+        salary = totalPeriods * rates.koma + totalMinutes * rates.office + totalSpecial;
       }
 
       display.innerHTML = 
@@ -140,25 +164,29 @@
     function showTotalSalary() {
       const data = JSON.parse(localStorage.getItem('attendance') || '[]');
 
-      let totalPeriods = 0;
-      let totalMinutes = 0;
-      let totalSpecial = 0;
+      let totalSalary = 0;
 
       data.forEach(row => {
-        totalPeriods += (row.periods || []).length;
-        totalMinutes += row.officeMinutes || 0;
-        totalSpecial += parseInt(row.specialAmount || '0', 10);
+        const date = row.date;
+        const month = date.slice(0, 7);
+        const rates = getRatesForMonth(month);
+
+        const periods = (row.periods || []).length;
+        const minutes = row.officeMinutes || 0;
+        const special = parseInt(row.specialAmount || '0', 10);
+
+        let salary = 0;
+        if (periods === 6) {
+          salary = (5 * rates.koma) + (1 * rates.extra) + (minutes * rates.office) + special;
+        } else {
+          salary = periods * rates.koma + minutes * rates.office + special;
+        }
+
+        totalSalary += salary;
       });
 
-      let salary = 0;
-      if (totalPeriods === 6) {
-        salary = (5 * 2183) + (1 * 2729) + (totalMinutes * 18) + totalSpecial;
-      } else {
-        salary = totalPeriods * 2183 + totalMinutes * 18 + totalSpecial;
-      }
-
       document.getElementById('total-salary-display').innerHTML = 
-        `<p><strong>${salary.toLocaleString()}円</strong></p>`;
+        `<p><strong>${totalSalary.toLocaleString()}円</strong></p>`;
     }
 
     // 初期表示時に実行
